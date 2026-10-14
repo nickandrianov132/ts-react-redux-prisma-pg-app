@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || "1322009nick";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "775391nick";
 
 class UserController {
     async regUser(req: Request, res: Response) {
@@ -50,9 +51,8 @@ class UserController {
             const {email, password} = req.body;
 
             const user = await prisma.user.findUnique({
-                where: email
+                where: { email: email }
             })
-
             if (!user) {
                 return res.status(401).json({ error: "Wrong email or password!" });
             }
@@ -63,15 +63,39 @@ class UserController {
                 return res.status(401).json({ error: "Wrong password!" });
             }
 
-            const token = jwt.sign({ userId: user.id}, JWT_SECRET, {expiresIn: "24h"});
+            const accessToken = jwt.sign({ userId: user.id}, JWT_SECRET, {expiresIn: "15m"});
+            const refreshToken = jwt.sign({ userId: user.id}, JWT_REFRESH_SECRET, {expiresIn: "7d"});
 
-            res.json({
+            // Записываем рефрештокен  куки браузера
+            res.cookie('refreshToken', refreshToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production', // Только по HTTPS в продакшене
+              sameSite: 'strict',                           // Защита от CSRF атак
+              maxAge: 7 * 24 * 60 * 60 * 1000              // 7 дней время жизни кука 
+            })
+
+            res.status(200).json({
                 message: "Successfully loged-in!",
                 user: { id: user.id,  username: user.username},
-                token
+                accessToken
             })
         } catch (error) {
+            console.log("Login Error:", error);
             res.status(500).json({ error: 'Log-in server error!' });
+        }
+    }
+
+    async logoutUser(req: Request, res: Response) {
+        try {
+          res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+          });
+
+          return res.status(200).json({ message: "Successfully logged out!" });
+        } catch (error) {
+          return res.status(500).json({ error: "Logout server error" });
         }
     }
 

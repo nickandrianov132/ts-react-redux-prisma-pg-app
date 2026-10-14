@@ -34,7 +34,7 @@ const RegForm = () => {
         // Если это системная или сериализованная ошибка JS
         return error.message || 'Что-то пошло не так';
     };
-    console.log("Form Render!");
+
     const onSubmit = async (data: RegistrationFormData, e?: BaseSyntheticEvent) => {
         try {
             console.log("Valid Form Data:", data);

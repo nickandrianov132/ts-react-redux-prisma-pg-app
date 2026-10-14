@@ -1,16 +1,10 @@
-// import { TodoAdd } from "./components/todoComponent/TodoAdd";
-// import { TodoList } from "./components/todoComponent/TodoList";
-
-import RegForm from "./components/registrationForm/RegForm";
+import Header from "./components/Header";
 
  const App = () => {
 
-
   return (
     <div>
-      {/* <TodoAdd /> */}
-      {/* <TodoList /> */}
-      <RegForm />
+      <Header />
     </div>
   );
 };

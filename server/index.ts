@@ -4,9 +4,8 @@ import { PrismaClient } from '@prisma/client/default.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import 'dotenv/config';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import router from './src/routes/index'
+import router from './src/routes/index';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const port = 3001;
@@ -18,11 +17,17 @@ const adapter = new PrismaPg(pool);
 export const prisma = new PrismaClient({ adapter });
 
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key';
+// 1. Настройка cors
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+})); 
 
-// 2. Middlewares
-app.use(cors()); 
-app.use(express.json()); 
+// 2. Парсеры 
+app.use(express.json()); // Чтобы читать req.body
+app.use(cookieParser()); // Чтобы читать req.cookies
 
 // 3. Entry Route
 app.use('/api', router);

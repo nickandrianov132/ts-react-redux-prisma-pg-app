@@ -1,16 +1,16 @@
 import { createApi, fetchBaseQuery, type BaseQueryFn, type FetchArgs, type FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { logout, setToken } from "../store/slices/authSlice";
-import { type RootState } from "../store/store";
+// import { type RootState } from "../store/store";
 
 
 const baseUrl = `${import.meta.env.VITE_API_URL}api`;
 
 const baseQuery = fetchBaseQuery({
     baseUrl: baseUrl,
-    // credentials: "include",
+    credentials: "include",
     prepareHeaders: (headers, { getState }) => {
         // console.log(getState())
-        const state = getState() as RootState;
+        const state = getState() as any;
         const token = state.user.accessToken
         if (token) {
             headers.set("Authorization", `Bearer ${token}`)
@@ -22,19 +22,24 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     // 1. Делаем обычный запрос
     let result = await baseQuery(args, api, extraOptions);
 
-   if (result.error && result.error.status === 401) {
-        api.dispatch(logout());
-        return result;
-    }
-
-    if (result.data) {
-        // Типизируем result.data как объект, чтобы TS не ругался на проверку свойства
-        const data = result.data as { token?: string };
-        
-        if (data.token !== undefined) {
-            api.dispatch(setToken(data.token));
+    if (result.error && result.error.status === 401) {
+        const refreshResult = await baseQuery({
+            url: '/auth/refresh',
+            method: 'POST',
+            credentials: "include"  // для куков
+            },
+            api, 
+            extraOptions
+        );
+        if (refreshResult.data) {
+            const data = refreshResult.data as { accessToken: string };
+            api.dispatch(setToken(data.accessToken));
             result = await baseQuery(args, api, extraOptions);
+        } else {
+            api.dispatch(logout());
         }
+        // api.dispatch(logout());
+        // return result;
     }
     
     return result;
