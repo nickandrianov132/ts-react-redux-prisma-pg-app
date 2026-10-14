@@ -99,6 +99,39 @@ class UserController {
         }
     }
 
+    async refreshUser(req: Request, res: Response) {
+      try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token missing!' });
+        }
+
+        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: number};
+
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId }
+        })
+
+        if (!user) {
+          return res.status(401).json({ error: 'User not found!' });
+        }
+
+        const newAccessToken = jwt.sign(
+          { userId: user.id },
+          JWT_SECRET,
+          { expiresIn: '15m' }
+        );
+
+        return res.status(200).json({
+          newAccessToken: newAccessToken
+        });
+
+      } catch (error) {
+        console.error("Refresh Token Error", error);
+        res.status(401).json({ error: "invalid or expired refresh token" })
+      }
+    }
+
 }
 
 export default new UserController();
