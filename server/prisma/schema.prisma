@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  email     String    @unique
+  password  String
+  topics    Topic[]
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]    
+  createdAt DateTime  @default(now())
+}
+
+model Topic {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    Int
+  posts       Post[]
+  likes       Like[]   
+  createdAt   DateTime @default(now())
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  topic     Topic     @relation(fields: [topicId], references: [id])
+  topicId   Int
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int
+  comments  Comment[]
+  likes     Like[]    
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  likes     Like[]
+  createdAt DateTime @default(now()) 
+}
+
+model Like {
+  id        Int       @id @default(autoincrement())
+  value     VoteValue 
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  
+  topic     Topic?    @relation(fields: [topicId], references: [id])
+  topicId   Int?
+  post      Post?     @relation(fields: [postId], references: [id])
+  postId    Int?
+  comment   Comment?  @relation(fields: [commentId], references: [id])
+  commentId Int?
+
+  @@unique([userId, topicId])
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+}
+
+
+enum VoteValue {
+  LIKE
+  DISLIKE
+}

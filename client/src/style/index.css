@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+
+
+@utility input {
+    @apply border border-slate-500/50 rounded-lg px-2 py-1 ml-3;
+}
